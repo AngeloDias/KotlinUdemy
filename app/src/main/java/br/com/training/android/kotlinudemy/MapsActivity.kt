@@ -15,7 +15,6 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
@@ -24,10 +23,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private var _accessLocation = 123
-    private var locationNotAllowed = "Isn't possible to access your location. Please grant the permission to app"
+    private var locationNotAllowed = "Isn't possible to access your location. Please grant the app permission"
     private var location: Location? = null
     private var pockemons = ArrayList<Pockemon>()
     private var oldLocation: Location? = null
+    private var playerPower = 0.0
+    private val _catchingMessage = "You catch a new pockemon and your power is: "
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,14 +85,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-
-        // Add a marker in Sydney and move the camera
-//        val sydney = LatLng(-34.0, 151.0)
-//        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney").snippet(" here is my location"))
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
     }
 
-    fun loadPockemon() {
+    fun loadPockemons() {
         pockemons.add(Pockemon("Charmander", "From the course", R.drawable.charmander, 70.0, 37.33, -122.0, false))
         pockemons.add(Pockemon("Bulbasaur", "From the course", R.drawable.bulbasaur, 97.0, 37.7949, -122.41049, false))
         pockemons.add(Pockemon("Charmander", "From the course", R.drawable.charmander, 37.0, 37.78166, -122.41225, false))
@@ -110,17 +106,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             location = p0
         }
 
-        override fun onStatusChanged(p0: String?, p1: Int, p2: Bundle?) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
+        override fun onStatusChanged(p0: String?, p1: Int, p2: Bundle?) {}
 
-        override fun onProviderEnabled(p0: String?) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
+        override fun onProviderEnabled(p0: String?) {}
 
-        override fun onProviderDisabled(p0: String?) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
+        override fun onProviderDisabled(p0: String?) {}
 
     }
 
@@ -135,6 +125,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             while (true) {
 
                 try {
+                    loadPockemons()
 
                     if(oldLocation!!.distanceTo(location) == 0f) {
                         continue
@@ -157,16 +148,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                             var newPockemon = pockemons[i]
 
                             if(newPockemon.isCatch == false) {
-                                val pockemonLocation = LatLng(newPockemon.lat!!, newPockemon.long!!)
+                                val pockemonLocation = LatLng(newPockemon.location!!.latitude, newPockemon.location!!.longitude)
 
                                 mMap.addMarker(
                                     MarkerOptions()
                                         .position(sydney)
                                         .title(newPockemon.name)
-                                        .snippet(newPockemon.description)
+                                        .snippet(newPockemon.description + ", power: " + newPockemon.power)
                                         .icon(BitmapDescriptorFactory.fromResource(newPockemon.image!!))
                                 )
-                                mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+
+                                if(location!!.distanceTo(newPockemon.location) < 2) {
+                                    newPockemon.isCatch = true
+                                    pockemons[i] = newPockemon
+                                    playerPower += newPockemon.power!!
+
+                                    Toast.makeText(applicationContext, _catchingMessage + playerPower, Toast.LENGTH_LONG).show()
+                                }
+
                             }
                         }
 
